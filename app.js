@@ -40,8 +40,11 @@ app.get('/products', async (req, res) => {
     const {data, error} = await supabase
         .from('products')
         .select()
-    res.send(data);
+    
     console.log(`lists all products${data}`);
+    
+    return res.send(data);
+
 });
 
 app.get('/products/:id', async (req, res) => {
@@ -50,27 +53,26 @@ app.get('/products/:id', async (req, res) => {
         .from('products')
         .select()
         .eq('id', req.params.id)
-    res.send(data);
 
     console.log("retorno "+ data);
+
+    return res.send(data);
 });
 
 app.post('/products', async (req, res) => {
-    const {error} = await supabase
-        .from('products')
-        .insert({
-            name: req.body.name,
-            description: req.body.description,
-            price: req.body.price,
-        })
-    if (error) {
-        res.send(error);
-    }
-    res.send("created!!");
-    console.log("retorno "+ req.body.name);
-    console.log("retorno "+ req.body.description);
-    console.log("retorno "+ req.body.price);
+    const { name, description, price } = req.body;
 
+    const { error } = await supabase
+        .from('products')
+        .insert({ name, description, price });
+
+    if (error) {
+        return res.status(400).send(error); // <- importante!
+    }
+
+    console.log("retorno", name, description, price);
+
+    return res.send("created!!");
 });
 
 app.put('/products/:id', async (req, res) => {
@@ -85,31 +87,40 @@ app.put('/products/:id', async (req, res) => {
     if (error) {
         res.send(error);
     }
-    res.send("updated!!");
+    return res.send("updated!!");
 });
 
 app.delete('/products/:id', async (req, res) => {
-    console.log("delete: " + req.params.id);
-    const {error} = await supabase
-        .from('products')
-        .delete()
-        .eq('id', req.params.id)
-    if (error) {
-        res.send(error);
-    }
-    res.send("deleted!!")
-    console.log("delete: " + req.params.id);
+    try {
+        console.log("delete: " + req.params.id);
 
+        const { error } = await supabase
+            .from('products')
+            .delete()
+            .eq('id', req.params.id);
+
+        if (error) {
+            console.error("Erro ao deletar:", error);
+            return res.status(400).json({ error: error.message });
+        }
+
+        console.log("Produto deletado com id:", req.params.id);
+        return res.status(200).send("deleted!!");
+    } catch (err) {
+        console.error("Erro inesperado:", err);
+        return res.status(500).json({ error: "Erro interno do servidor" });
+    }
 });
 
+
 app.get('/', (req, res) => {
-    res.send("Hello I am working my friend Supabase <3");
+    return res.send("Hello I am working my friend Supabase <3");
 });
 
 app.get('*', (req, res) => {
-    res.send("Hello again I am working my friend to the moon and behind <3");
+    return res.send("Hello again I am working my friend to the moon and behind <3");
 });
 
 app.listen(3000, () => {
-    console.log(`> Ready on http://localhost:3000`);
+    return console.log(`> Ready on http://localhost:3000`);
 });
